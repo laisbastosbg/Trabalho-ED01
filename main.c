@@ -38,8 +38,6 @@ char *validateBrackets (Node *head) {
     tmp = tmp->next;
     if (tmp->value == '(') openingBracketCounter++;
     if (tmp->value == ')') closingBracketCounter++;
-    // printf("%d\n", openingBracketCounter);
-    // printf("%d\n", closingBracketCounter);
 
     if (closingBracketCounter > openingBracketCounter)
       return "Error: closing brackets must come after opening brackets\n";
@@ -52,15 +50,65 @@ char *validateBrackets (Node *head) {
 }
 
 char *validateOperators (Node *head) {
-  int countOperators = 0;
-
   Node *tmp = head;
 
+  char currentElement;
+  char nextElement;
   while (tmp->next) {
     tmp = tmp->next;
+    currentElement = tmp->value;
+    nextElement = tmp->next->value;
 
-    if ()
+    if (
+      (currentElement == '+' ||
+      currentElement == '-' ||
+      currentElement == '*' ||
+      currentElement == '/') &&
+
+      (nextElement == '+' ||
+      nextElement == '-' ||
+      nextElement == '*' ||
+      nextElement == '/' ||
+      nextElement == ')')
+    ) {
+      return "Error: Invalid operation\n";
+      
+    }
   }
+
+  return "ok\n";
+}
+
+char *validateCharacters (Node *head) {
+  Node *tmp = head;
+
+  while(tmp->next) {
+    tmp = tmp->next;
+
+    switch(tmp->value) {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+      case '+':
+      case '-':
+      case '*':
+      case '/':
+      case '(':
+      case ')':
+        break;
+      default:
+        return "Error: Invalid input\n";
+    }
+  }
+  
+  return "ok\n";
 }
 
 int main () {
@@ -79,19 +127,24 @@ int main () {
 
   // coloca a string de entrada em uma lista encadeada
   int i;
-  entrada = "((2 + 3 ) * (5 + 2) ) * ((3 + 8 - 2 )  * (2 + 3)  * (3 + 4) )";
+  entrada = "((2 + 3 a) * (5 + 2) ) * ((3 + 8 - 2 )  * (2 + 3)  * (3 + 4) )";
   for (i = 0; i < strlen(entrada); i++) {
     // printf("%d: %c\n", i, entrada[i]);
     add(&head, entrada[i]);
   }
 
-  char *response = validateBrackets(head);
+  char *validateBracketsResponse = validateBrackets(head);
 
-  printf("%s", response);
+  printf("%s", validateBracketsResponse);
+
+  char *validateOpeatorsResponse = validateOperators(head);
+
+  printf("%s", validateOpeatorsResponse);
+
+  char *validateCharactersResponse = validateCharacters(head);
+
+  printf("%s", validateCharactersResponse);
   list(head);
 
-  // char expressao[] = "((2 + 3 ) * (5 + 2) ) * ((3 + 8 - 2 )  * (2 + 3)  * (3 + 4) )";
-
-  // printf("%s\n", expressao);
   return 0;
 }
