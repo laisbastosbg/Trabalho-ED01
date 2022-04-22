@@ -11,7 +11,7 @@ typedef struct Node {
   struct Node *tail;
 } Node;
 
-void add(Node **head, char value) {
+void addToEnd(Node **head, char value) {
   Node *tmp = *head;
   Node *node = (Node *)malloc(sizeof(Node));
 
@@ -30,6 +30,34 @@ void add(Node **head, char value) {
   node->previous = tmp;
 }
 
+void add(Node **head, char value, Node *lastNode) {
+  Node *tmp = *head;
+  Node *node = (Node *)malloc(sizeof(Node));
+
+  node->value = value;
+  node->next = NULL;
+  node->head = *head;
+  node->tail = node;
+
+  while (tmp != lastNode) {
+    if(lastNode->next == NULL) {
+      tmp->tail = node;
+    }
+    
+    tmp = tmp->next;
+  }
+
+  if(tmp->next) {
+    node->next = tmp->next;
+  }
+  
+  tmp->next = node;
+  // if(lastNode->next == NULL) {
+    tmp->tail = node;
+  // }
+  node->previous = tmp;
+}
+
 void pop(Node **head, Node *node) {
 
   if (node->previous) {
@@ -42,7 +70,9 @@ void pop(Node **head, Node *node) {
 
   Node *tmp = *head;
   while (tmp->next) {
-    tmp->tail = node->previous;
+    if(node->next == NULL) {
+      tmp->tail = node->previous;
+    }
     tmp = tmp->next;
   }
 
@@ -163,7 +193,7 @@ void stripSpaces(Node *head) {
   }
 }
 
-void parseToPostFix(Node *head) {
+Node *parseToPostFix(Node *head) {
   Node *tmp = head;
 
   Node *bracketStackHead = (Node *)malloc(sizeof(Node));
@@ -187,27 +217,74 @@ void parseToPostFix(Node *head) {
   while (tmp->next) {
     tmp = tmp->next;
     if (tmp->value == '(') {
-      add(&bracketStackHead, tmp->value);
-    } else if (tmp->value == ')') {
+      add(&bracketStackHead, tmp->value, bracketStackHead->tail);
+    } 
+    else if (tmp->value == ')') {
       while (operatorStackHead->next) {
-        add(&newStackHead, operatorStackHead->tail->value);
+        add(&newStackHead, operatorStackHead->tail->value, newStackHead->tail);
         pop(&operatorStackHead, operatorStackHead->tail);
         pop(&bracketStackHead, bracketStackHead->tail);
       }
-    } else if (isdigit(tmp->value)) {
-      add(&newStackHead, tmp->value);
-    } else if (tmp->value == '+' || tmp->value == '-' || tmp->value == '*' ||
+    } 
+    else if (isdigit(tmp->value)) {
+      add(&newStackHead, tmp->value, newStackHead->tail);
+    } 
+    else if (tmp->value == '+' || tmp->value == '-' || tmp->value == '*' ||
                tmp->value == '/') {
-      add(&operatorStackHead, tmp->value);
+      // printf("%c\n", operatorStackHead->tail->value);
+      // if(operatorStackHead->tail) {
+      // addToEnd(&operatorStackHead, tmp->value);
+      // }
+      
     }
   }
-  while (operatorStackHead->next) {
-    add(&newStackHead, operatorStackHead->tail->value);
-    pop(&operatorStackHead, operatorStackHead->tail);
+  // while (operatorStackHead->next) {
+  //   add(&newStackHead, operatorStackHead->tail->value, newStackHead->tail);
+  //   pop(&operatorStackHead, operatorStackHead->tail);
+  // }
+  // printf()
+  return newStackHead;
+}
+
+int isOperator(char character) {
+  if (
+    character == '+' ||
+    character == '-' ||
+    character == '*' ||
+    character == '/'
+  ) return 1;
+
+  return 0;
+}
+
+int calculate(Node *head) {
+  Node *tmp = head;
+  int result = 0;
+  while(tmp->next) {
+    if(isOperator(tmp->value) == 1) {
+      int a = tmp->previous->previous->value;
+      int b = tmp->previous->value;
+
+      printf("\n%c %c %c\n", a, tmp->value, b);
+      if(tmp->value == '+') {
+        result += (a + b);
+      } else if(tmp->value == '-') {
+        result += (a - b);
+      } else if(tmp->value == '/') {
+        result += (a / b);
+      } else if(tmp->value == '*') {
+        result += (a * b);
+      }
+
+      pop(&tmp, tmp);
+      pop(&tmp, tmp->previous);
+      pop(&tmp, tmp->previous->previous);
+    }
+
+    tmp = tmp->next;
   }
-  list(bracketStackHead);
-  list(operatorStackHead);
-  list(newStackHead);
+
+  return result;
 }
 
 int main() {
@@ -231,9 +308,8 @@ int main() {
   // entrada = "2+1-3*4";
   for (i = 0; i < strlen(entrada); i++) {
     // printf("%d: %c\n", i, entrada[i]);
-    add(&head, entrada[i]);
+    add(&head, entrada[i], head->tail);
   }
-
   char *validateBracketsResponse = validateBrackets(head);
 
   // printf("%s\n", validateBracketsResponse);
@@ -247,9 +323,12 @@ int main() {
   // printf("%s\n\n\n", validateCharactersResponse);
   // list(head);
   stripSpaces(head);
+// printf("tail: %c\n", head->tail->value);
   list(head);
 
-  parseToPostFix(head);
+  Node *postfix = parseToPostFix(head);
+list(postfix);
+//   printf("\nresult: %d\n", calculate(postfix));
 
   return 0;
 }
