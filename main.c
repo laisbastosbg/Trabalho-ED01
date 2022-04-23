@@ -11,7 +11,15 @@ typedef struct Node {
   struct Node *tail;
 } Node;
 
-void add(Node **head, char value) {
+typedef struct DoubleStack {
+  double value;
+  struct DoubleStack *next;
+  struct DoubleStack *previous;
+  struct DoubleStack *head;
+  struct DoubleStack *tail;
+} DoubleStack;
+
+void push(Node **head, char value) {
   Node *tmp = *head;
   Node *node = (Node *)malloc(sizeof(Node));
 
@@ -30,6 +38,53 @@ void add(Node **head, char value) {
   node->previous = tmp;
 }
 
+void pushDouble(DoubleStack **head, int value) {
+  DoubleStack *tmp = *head;
+  DoubleStack *node = (DoubleStack *)malloc(sizeof(DoubleStack));
+
+  node->value = value;
+  node->next = NULL;
+  node->head = *head;
+  node->tail = node;
+  
+  while (tmp->next != NULL) {
+    tmp->tail = node;
+    tmp = tmp->next;
+  }
+
+  tmp->next = node;
+  tmp->tail = node;
+  node->previous = tmp;
+}
+
+void add(Node **head, char value, Node *lastNode) {
+  Node *tmp = *head;
+  Node *node = (Node *)malloc(sizeof(Node));
+
+  node->value = value;
+  node->next = NULL;
+  node->head = *head;
+  node->tail = node;
+
+  while (tmp != lastNode) {
+    if(lastNode->next == NULL) {
+      tmp->tail = node;
+    }
+    
+    tmp = tmp->next;
+  }
+
+  if(tmp->next) {
+    node->next = tmp->next;
+  }
+  
+  tmp->next = node;
+  // if(lastNode->next == NULL) {
+    tmp->tail = node;
+  // }
+  node->previous = tmp;
+}
+
 void pop(Node **head, Node *node) {
 
   if (node->previous) {
@@ -42,11 +97,34 @@ void pop(Node **head, Node *node) {
 
   Node *tmp = *head;
   while (tmp->next) {
-    tmp->tail = node->previous;
+    if(node->next == NULL) {
+      tmp->tail = node->previous;
+    }
     tmp = tmp->next;
   }
 
   // free(node); // essa linha faz o loop de stripSpaces quebrar (?)
+}
+
+void popDouble(DoubleStack **head, DoubleStack *node) {
+
+  if (node->previous) {
+    node->previous->next = node->next;
+  }
+
+  if (node->next) {
+    node->next->previous = node->previous;
+  }
+
+ DoubleStack *tmp = *head;
+  while (tmp->next) {
+    if(node->next == NULL) {
+      tmp->tail = node->previous;
+    }
+    tmp = tmp->next;
+  }
+
+  free(node);
 }
 
 void list(Node *head) {
@@ -55,6 +133,16 @@ void list(Node *head) {
   while (tmp->next) {
     tmp = tmp->next;
     printf("%c", tmp->value);
+  }
+  printf("\n");
+}
+
+void listDouble(DoubleStack *head) {
+  DoubleStack *tmp = head;
+
+  while (tmp->next) {
+    tmp = tmp->next;
+    printf("%.1f ", tmp->value);
   }
   printf("\n");
 }
@@ -160,26 +248,78 @@ Node *parseToPostFix(Node *head) {
   while (tmp->next) {
     tmp = tmp->next;
     if (tmp->value == '(') {
-      add(&bracketStackHead, tmp->value);
+      push(&bracketStackHead, tmp->value);
     } else if (tmp->value == ')') {
       while (operatorStackHead->next) {
-        add(&newStackHead, operatorStackHead->tail->value);
+        push(&newStackHead, operatorStackHead->tail->value);
         pop(&operatorStackHead, operatorStackHead->tail);
         pop(&bracketStackHead, bracketStackHead->tail);
       }
     } else if (isdigit(tmp->value)) {
-      add(&newStackHead, tmp->value);
+      push(&newStackHead, tmp->value);
     } else if (tmp->value == '+' || tmp->value == '-' || tmp->value == '*' ||
                tmp->value == '/') {
-      add(&operatorStackHead, tmp->value);
+      push(&operatorStackHead, tmp->value);
     }
   }
   while (operatorStackHead->next) {
-    add(&newStackHead, operatorStackHead->tail->value);
+    push(&newStackHead, operatorStackHead->tail->value);
     pop(&operatorStackHead, operatorStackHead->tail);
   }
   
   return newStackHead;
+}
+
+int isOperator(char character) {
+  if (
+    character == '+' ||
+    character == '-' ||
+    character == '*' ||
+    character == '/'
+  ) return 1;
+
+  return 0;
+}
+
+void calculate(Node *head) {
+  Node *tmp = head;
+  DoubleStack *result = (DoubleStack *) malloc(sizeof(DoubleStack));
+
+  while(tmp->next) {
+    tmp = tmp->next;
+    
+      if (isOperator(tmp->value) == 1) {
+        double a = result->tail->previous->value;
+        double b = result->tail->value;
+        double c = 0;
+        popDouble(&result, result->tail);
+        popDouble(&result, result->tail);
+        if(tmp->value == '+') {
+          c = a + b;
+          // printf("%.1f + %.1f = %.1f\n", a, b, c);
+          pushDouble(&result, c);
+        } else if (tmp->value == '-') {
+          c = a - b;
+          // printf("%.1f - %.1f = %.1f\n", a, b, c);
+          pushDouble(&result, c);
+        } else if (tmp->value == '*') {
+          c = a * b;
+          // printf("%.1f * %.1f = %.1f\n", a, b, c);
+          pushDouble(&result, c);
+        } else if (tmp->value == '/') {
+          c = a / b;
+          // printf("%.1f / %.1f = %.1f\n", a, b, c);
+          pushDouble(&result, c);
+        }
+        
+      } else {
+        int currentValue = tmp->value - '0';
+        pushDouble(&result, currentValue);
+      }
+  }
+  printf("result: ");
+  listDouble(result);
+
 }
 
 int main() {
@@ -197,10 +337,12 @@ int main() {
   printf("enter infix expression: ");
   read = getline(&entrada, &length, stdin);
 
+  // entrada = "((2 + 3 ) * (5 + 2) ) * ((3 + 8 - 2 )  * (2 + 3)  * (3 + 4) )";
+
   // coloca a string de entrada em uma lista encadeada
   int i;
   for (i = 0; i < strlen(entrada); i++) {
-    add(&head, entrada[i]);
+    push(&head, entrada[i]);
   }
 
   validateBrackets(head);
@@ -212,6 +354,8 @@ int main() {
   Node *postfix = parseToPostFix(head);
   printf("postfix: ");
   list(postfix);
+
+  calculate(postfix);
 
   return 0;
 }
