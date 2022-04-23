@@ -89,6 +89,16 @@ void list(Node *head) {
   printf("\n");
 }
 
+void listInt(Node *head) {
+  Node *tmp = head;
+
+  while (tmp->next) {
+    tmp = tmp->next;
+    printf("%d ", tmp->value);
+  }
+  printf("\n");
+}
+
 char *validateBrackets(Node *head) {
   int openingBracketCounter = 0;
   int closingBracketCounter = 0;
@@ -252,34 +262,75 @@ int isOperator(char character) {
 
 int calculate(Node *head) {
   Node *tmp = head;
-  int result = 0;
+  Node *result = (Node *) malloc(sizeof(Node));
   
   while(tmp->next) {
     if(isOperator(tmp->value) == 1) {
-      int a = tmp->previous->previous->value;
-      int b = tmp->previous->value;
+      list(head);
+      int a = 0;
+      int b = 0;
+      printf("\natual: %c\n", tmp->value);
+      // printf("\nant: %c\n", tmp->previous->value);
+      if(tmp->previous->previous && tmp->previous->previous->value) {
+        a = tmp->previous->previous->value - '0';
+        b = tmp->previous->value - '0';
+      } else if(tmp->previous && tmp->previous->value) {
+        printf("y");
+        a = result->tail->value ;
+        b = tmp->previous->value - '0';
+      } 
+      else {
+        printf("z");
+        a = result->tail->previous->value ;
+        b = result->tail->value; 
+      }
+      int c = 0;
 
-      printf("\n%c %c %c\n", a, tmp->value, b);
+      // printf(")
+
+      printf("\n%d %c %d\n", a, tmp->value, b);
       if(tmp->value == '+') {
-        result += (a + b);
+        c = (a + b);
       } else if(tmp->value == '-') {
-        result += (a - b);
+        c = (a - b);
       } else if(tmp->value == '/') {
-        result += (a / b);
+        c = (a / b);
       } else if(tmp->value == '*') {
-        result += (a * b);
+        c = (a * b);
       }
 
-      pop(&tmp, tmp);
-      pop(&tmp, tmp->previous);
-      pop(&tmp, tmp->previous->previous);
+      printf("c = %d\n", c);
+      
+      addToEnd(&result, c);
+      listInt(result);
+      list(head);
+      if(tmp->previous->previous) {
+        printf("aaa\n");
+        pop(&tmp, tmp->previous);
+        printf("1: ");
+      list(head);
+        pop(&tmp, tmp->previous);
+        printf("2: ");
+      list(head);
+      }
+
+      if(tmp->previous->value) {
+        printf("aaa\n");
+        pop(&tmp, tmp->previous);
+        printf("1: ");
+      }
+        pop(&tmp, tmp);
+        printf("3: ");
+      list(head);
+      // add(&head, c, tmp);
     }
 
     tmp = tmp->next;
   }
 
-  return result;
+  return result->tail->value;
 }
+
 int main() {
   Node *head = (Node *)malloc(sizeof(Node));
   head->next = NULL;
@@ -320,8 +371,8 @@ int main() {
   list(head);
 
   Node *postfix = parseToPostFix(head);
- list(postfix);
-// printf("\nresult: %d\n", calculate(postfix));
+ // list(postfix);
+printf("\nresult: %d\n", calculate(postfix));
 
   return 0;
 }
